@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import os
 import pandas as pd
 from datetime import datetime
 from pyzotero import zotero
@@ -71,14 +72,19 @@ def get_first_author(item):
         creators = item['data'].get('creators', [])
         for creator in creators:
             if creator.get('name'):
-                first_author = creator['name'].split(',')[0]
+                first_author = creator['name'].split(',')[0] + 'et al.'
                 break
             elif creator.get('lastName'):
-                first_author = creator['lastName']
+                first_author = creator['lastName'] + 'et al.'
                 break
     return(first_author)
 
 for collection in collection_keys.keys():
+    outfile = f'tag-table-{collection}.html'
+    outfile2 = f'tag-table-{collection}-by-scenario.html'
+    if os.path.exists(outfile):
+      print(f'Skipping existing {collection} ...')
+      continue
     print(f'Processing {collection} ...')
     items = []
     for collection_key in get_subcollection_keys(zot, collection_keys[collection]):
@@ -103,14 +109,14 @@ for collection in collection_keys.keys():
                 data.append({
                     'Category': category,
                     'Subcategory': subcategory,
-                    'Key': f'{auth} et al. ({yr})'
+                    'Key': f'{auth} ({yr})'
                 })
 
     df = pd.DataFrame(data)
 
     df['Subcategory'] = df['Subcategory'].map(subcategory_mapping).fillna(df['Subcategory'])
     df_grouped = df.groupby(['Category', 'Subcategory']).agg(lambda x: '<br>'.join(list(set(x))))
-    with open(f'tag-table-{collection}.html', 'w') as html_file:
+    with open(outfile, 'w') as html_file:
         html_file.write(f'''
 <html>
 <head>
@@ -134,7 +140,7 @@ for collection in collection_keys.keys():
         data2.append(df[df['Key'].isin(subcatkeys)].groupby(['Category', 'Subcategory']).agg(lambda x: '<br>'.join(sorted(list(set(x))))))
     df2 = pd.concat(data2, axis = 1).fillna('')
     df2.columns = subcats
-    with open(f'tag-table-{collection}-by-scenario.html', 'w') as html_file:
+    with open(outfile2, 'w') as html_file:
         html_file.write(f'''
 <html>
 <head>

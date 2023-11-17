@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import os
 from datetime import datetime
 from pyzotero import zotero
 
@@ -98,6 +99,7 @@ collections = {
     'precipitation' : 'B4JY8RHB',
     'circulation' : '9342658V',
     'wind' : 'YAAWRDMV',
+    'moisture' : 'VEGUIVI9'
     'multi-variable-indices' : 'LVC9385S',
     'other-variables' : 'N5I79E23',
 }    
@@ -108,12 +110,16 @@ collection_map = dict([(coll['data']['key'], coll['data']['name']) for coll in a
 
 for collection_name, collection_key in collections.items():
   
+    report_filename = f'report-{collection_name}.html'
+    if os.path.exists(report_filename):
+        print(f'{report_filename} exists. Skipping ...')
+        continue
+
     top_level_items = get_top_level_items(zot, collection_key)
     notes = get_notes(zot, collection_key)
     report_data = [extract_tags_and_notes(zot, item, notes) for item in top_level_items]
     report_data = sorted(report_data, key=lambda x: (x['First Author'].lower(), x['Year']))
     html_table = generate_html_table(report_data, collection_name)
-    report_filename = f'report-{collection_name}.html'
     html_file = open(report_filename, 'w')
     html_file.write(html_header())
     html_file.write(html_table)
