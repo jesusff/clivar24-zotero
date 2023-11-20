@@ -5,24 +5,12 @@ import os
 import pandas as pd
 from datetime import datetime
 from pyzotero import zotero
-
-group_id = '5149914'
-api_key = 'ca9nfF3QebWRnCOu2yx39luQ'
+from common import *
 
 zot = zotero.Zotero(group_id, 'group', api_key)
 current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
 
-collection_keys = {
-    'temperature' : 'T7N74W2T',
-    'precipitation' : 'B4JY8RHB',
-    'circulation' : '9342658V',
-    'wind' : 'YAAWRDMV',
-    'multi-variable-indices' : 'LVC9385S',
-    'other-variables' : 'N5I79E23',
-}
-
 all_collections = zot.everything(zot.collections())
-#collection_keys = dict([(coll['data']['name'], coll['data']['key']) for coll in all_collections])
 
 subcategory_mapping = {
     'rcp26':  'rcp26/ssp126',
@@ -64,24 +52,9 @@ def get_subcollection_keys(zot, collection_key):
         subcollection_keys.extend(get_subcollection_keys(zot, subcollection['key']))
     return subcollection_keys
 
-def get_first_author(item):
-    if 'creatorSummary' in item['meta']:
-        first_author = item['meta']['creatorSummary']
-    else:
-        first_author = ''
-        creators = item['data'].get('creators', [])
-        for creator in creators:
-            if creator.get('name'):
-                first_author = creator['name'].split(',')[0] + 'et al.'
-                break
-            elif creator.get('lastName'):
-                first_author = creator['lastName'] + 'et al.'
-                break
-    return(first_author)
-
-for collection in collection_keys.keys():
-    outfile = f'tag-table-{collection}.html'
-    outfile2 = f'tag-table-{collection}-by-scenario.html'
+for collection in collection_filenames.keys():
+    outfile = f'tag-table-{collection_filenames[collection]}.html'
+    outfile2 = f'tag-table-{collection_filenames[collection]}-by-scenario.html'
     if os.path.exists(outfile):
       print(f'Skipping existing {collection} ...')
       continue

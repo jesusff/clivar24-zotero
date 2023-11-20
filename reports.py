@@ -4,6 +4,7 @@
 import os
 from datetime import datetime
 from pyzotero import zotero
+from common import *
 
 def get_top_level_items(zot, collection_key):
     items = zot.collection_items(collection_key)
@@ -15,21 +16,6 @@ def get_notes(zot, collection_key):
     notes = [item for item in items if item['data']['itemType'] == 'note' and 'parentItem' in item['data']]
     return notes
 
-def get_first_author(item):
-    if 'creatorSummary' in item['meta']:
-        first_author = item['meta']['creatorSummary']
-    else:
-        first_author = ''
-        creators = item['data'].get('creators', [])
-        for creator in creators:
-            if creator.get('name'):
-                first_author = creator['name'].split(',')[0]
-                break
-            elif creator.get('lastName'):
-                first_author = creator['lastName']
-                break
-    return(first_author)
-    
 def extract_tags_and_notes(zot, item, notes_data):
     item_data = item['data']
     title = item_data.get('title', 'N/A')
@@ -92,25 +78,14 @@ def generate_html_table(report_data, collection):
     html_table += "</table></body></html>"
     return html_table
 
-group_id = '5149914'
-api_key = 'ca9nfF3QebWRnCOu2yx39luQ'
-collections = {
-    'temperature' : 'T7N74W2T',
-    'precipitation' : 'B4JY8RHB',
-    'circulation' : '9342658V',
-    'wind' : 'YAAWRDMV',
-    'moisture' : 'VEGUIVI9'
-    'multi-variable-indices' : 'LVC9385S',
-    'other-variables' : 'N5I79E23',
-}    
-
 zot = zotero.Zotero(group_id, 'group', api_key)
 all_collections = zot.everything(zot.collections())
 collection_map = dict([(coll['data']['key'], coll['data']['name']) for coll in all_collections])
 
-for collection_name, collection_key in collections.items():
-  
-    report_filename = f'report-{collection_name}.html'
+for collection_name, collection_fname in collection_filenames.items():
+
+    collection_key = collection_keys[collection_name]  
+    report_filename = f'report-{collection_fname}.html'
     if os.path.exists(report_filename):
         print(f'{report_filename} exists. Skipping ...')
         continue
