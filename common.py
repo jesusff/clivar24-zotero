@@ -26,6 +26,8 @@ collection_filenames = {
     '5_Moisture': 'moisture',
     '6_Radiation_and_clouds': 'radiation-clouds',
     '7_Multivariable_relationships_and_indices': 'multi-variable-indices',
+    'Mountain': 'mountain',
+    'Canary_islands': 'canaries',
 }
 
 # from pyzotero import zotero
