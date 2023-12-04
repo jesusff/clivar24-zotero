@@ -18,6 +18,7 @@ def get_notes(zot, collection_key):
 
 def extract_tags_and_notes(zot, item, notes_data):
     item_data = item['data']
+    url = item_data.get('url', '')
     title = item_data.get('title', 'N/A')
     first_author = get_first_author(item)
     year = item_data.get('date', 'N/A')
@@ -36,6 +37,7 @@ def extract_tags_and_notes(zot, item, notes_data):
         'Year': year,
         'Tags': tags,
         'Collections' : collections,
+        'URL' : url,
         'Notes': notes}
 
 def html_header():
@@ -46,6 +48,7 @@ def html_header():
   table, th, td {{font-size:10pt; border:1px solid black; border-collapse:collapse; text-align:left;}}
   th, td {{padding: 5px; vertical-align: top;}}
   h2 {{ padding-top: 20px; padding-bottom: 0px; }}
+  a {{ text-decoration: none; color: #3399ff;}}
 </style>
 </head>
 <body>
@@ -65,8 +68,9 @@ def generate_html_table(report_data, collection):
 <table>"""
     for item_data in report_data:
         # Multicolumn entry for author, year, and title
+        entry_link = f'<a href="{item_data["URL"]}">{item_data["First Author"]} ({item_data["Year"]})</a>'
         html_table += (
-            f"<tr><td colspan='2' style='border-left: 1px solid white; border-right: 1px solid white; padding-top: 15px;'><b>{item_data['First Author']} ({item_data['Year']})</b> {item_data['Title']}</td></tr>"
+            f"<tr><td colspan='2' style='border-left: 1px solid white; border-right: 1px solid white; padding-top: 15px;'><b>{entry_link}</b> {item_data['Title']}</td></tr>"
         )
         # Tags row
         html_table += f"<tr><td>Tags</td><td>{', '.join(item_data['Tags'])}</td></tr>"
