@@ -52,14 +52,34 @@ def get_subcollection_keys(zot, collection_key):
         subcollection_keys.extend(get_subcollection_keys(zot, subcollection['key']))
     return subcollection_keys
 
+def taglist(item):
+    tags = item['data']['tags']
+    first_author = get_first_author(item)
+    year = item['data']['date']
+    rval = []
+    # Categorize the item by its tags
+    for tag in tags:
+        if tag['tag'].startswith("#"):
+            tag_parts = tag['tag'][1:].split('/')
+            category = tag_parts[0].strip()
+            subcategory = tag_parts[1].strip() if len(tag_parts) > 1 else ''
+            auth = first_author if first_author else ''
+            yr = year[0:4] if year else ''
+            rval.append({
+                'Category': category,
+                'Subcategory': subcategory,
+                'Key': f'{auth} ({yr})'
+            })
+    return(rval)
+
 for collection in collection_filenames.keys():
-    outfile = f'tag-table-{collection_filenames[collection]}.html'
-    outfile2 = f'tag-table-{collection_filenames[collection]}-by-scenario.html'
+    outfile = f'./{html_dir}/tag-table-{collection_filenames[collection]}.html'
+    outfile2 = f'./{html_dir}/tag-table-{collection_filenames[collection]}-by-scenario.html'
     if os.path.exists(outfile):
       print(f'Skipping existing {collection} ...')
       continue
     print(f'Processing {collection} ...')
-    items = []
+    items = zot.collection_items(collection_keys[collection])
     for collection_key in get_subcollection_keys(zot, collection_keys[collection]):
         items.extend(zot.collection_items(collection_key))
     data = []
@@ -67,24 +87,7 @@ for collection in collection_filenames.keys():
         # Check if the entry has a parent item (i.e., it's not a note or attachment)
         if 'parentItem' in item['data']:
             continue
-        tags = item['data']['tags']
-        first_author = get_first_author(item)
-        year = item['data']['date']
-
-        # Categorize the item by its tags
-        for tag in tags:
-            if tag['tag'].startswith("#"):
-                tag_parts = tag['tag'][1:].split('/')
-                category = tag_parts[0].strip()
-                subcategory = tag_parts[1].strip() if len(tag_parts) > 1 else ''
-                auth = first_author if first_author else ''
-                yr = year[0:4] if year else ''
-                data.append({
-                    'Category': category,
-                    'Subcategory': subcategory,
-                    'Key': f'{auth} ({yr})'
-                })
-
+        data.extend(taglist(item))
     df = pd.DataFrame(data)
 
     df['Subcategory'] = df['Subcategory'].map(subcategory_mapping).fillna(df['Subcategory'])

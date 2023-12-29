@@ -29,6 +29,7 @@ collection_filenames = {
     'Mountain': 'mountain',
     'Canary_islands': 'canaries',
 }
+html_dir = 'docs'
 
 # from pyzotero import zotero
 # from pprint import pprint
@@ -68,7 +69,7 @@ collection_keys = {
  'nuevos-angel': '66N93HFT'}
 
 if __name__ == '__main__':
-  fp = open('index.html', 'w')
+  fp = open(f'./{html_dir}/index.html', 'w')
   fp.write(f'''
 <html>
 <head>

@@ -52,7 +52,7 @@ def html_header():
 </style>
 </head>
 <body>
-<h1>CLIVAR 2024. Chapter 5 references</h1>
+<h1 id="top">CLIVAR 2024. Chapter 5 references</h1>
 ({current_date})
 ''' )
 
@@ -62,9 +62,17 @@ def html_footer():
 </html>
 ''' )
 
+def plain_chars(string):
+  return(string
+    .replace('/', '-')
+    .replace(' ', '-')
+    .replace('_', '-')
+    .lower()
+  )
+
 def generate_html_table(report_data, collection):
     html_table = f"""
-<h2>{collection}</h2>
+<h2 id={plain_chars(collection)}>{collection} <a href="#top">^</a></h2>
 <table>"""
     for item_data in report_data:
         # Multicolumn entry for author, year, and title
@@ -79,7 +87,7 @@ def generate_html_table(report_data, collection):
         # Notes rows
         for note_type, note_content in item_data['Notes']:
             html_table += f"<tr><td>{note_type}</td><td>{note_content}</td></tr>"
-    html_table += "</table></body></html>"
+    html_table += "</table>"
     return html_table
 
 zot = zotero.Zotero(group_id, 'group', api_key)
@@ -89,21 +97,23 @@ collection_map = dict([(coll['data']['key'], coll['data']['name']) for coll in a
 for collection_name, collection_fname in collection_filenames.items():
 
     collection_key = collection_keys[collection_name]  
-    report_filename = f'report-{collection_fname}.html'
+    report_filename = f'./{html_dir}/report-{collection_fname}.html'
     if os.path.exists(report_filename):
         print(f'{report_filename} exists. Skipping ...')
         continue
 
     top_level_items = get_top_level_items(zot, collection_key)
+    subcollections = [collection for collection in all_collections if collection['data']['parentCollection'] == collection_key]
+
     notes = get_notes(zot, collection_key)
     report_data = [extract_tags_and_notes(zot, item, notes) for item in top_level_items]
     report_data = sorted(report_data, key=lambda x: (x['First Author'].lower(), x['Year']))
     html_table = generate_html_table(report_data, collection_name)
     html_file = open(report_filename, 'w')
     html_file.write(html_header())
+    html_file.write('<p>'+ ' · '.join([f'<a href=#{plain_chars(collection_name)}-{plain_chars(x["data"]["name"])}>{x["data"]["name"]}</a>' for x in subcollections]))
     html_file.write(html_table)
         
-    subcollections = [collection for collection in all_collections if collection['data']['parentCollection'] == collection_key]
     for subcollection in subcollections:
         subcollection_key = subcollection['data']['key']
         subcollection_name = subcollection['data']['name']
