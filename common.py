@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
+from datetime import datetime
 
 def get_first_author(item):
     if 'creatorSummary' in item['meta']:
@@ -15,6 +16,36 @@ def get_first_author(item):
                 first_author = creator['lastName']
                 break
     return(first_author)
+
+def html_header(title='CLIVAR 2024. Chapter 5'):
+    current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
+    return(f'''<html>
+<head>
+<style> 
+  table, th, td {{font-size:10pt; border:1px solid black; border-collapse:collapse; text-align:left;}}
+  th, td {{padding: 5px; vertical-align: top;}}
+  h2 {{ padding-top: 20px; padding-bottom: 0px; }}
+  a {{ text-decoration: none; color: #3399ff;}}
+</style>
+</head>
+<body>
+<h1 id="top">{title}</h1>
+({current_date})
+''' )
+
+def html_footer():
+    return(f'''
+</body>
+</html>
+''' )
+
+def plain_chars(string):
+  return(string
+    .replace('/', '-')
+    .replace(' ', '-')
+    .replace('_', '-')
+    .lower()
+  )
     
 group_id = '5149914'
 api_key = 'ca9nfF3QebWRnCOu2yx39luQ'

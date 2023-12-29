@@ -3,12 +3,10 @@
 
 import os
 import pandas as pd
-from datetime import datetime
 from pyzotero import zotero
 from common import *
 
 zot = zotero.Zotero(group_id, 'group', api_key)
-current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
 
 all_collections = zot.everything(zot.collections())
 
@@ -89,25 +87,12 @@ for collection in collection_filenames.keys():
             continue
         data.extend(taglist(item))
     df = pd.DataFrame(data)
-
     df['Subcategory'] = df['Subcategory'].map(subcategory_mapping).fillna(df['Subcategory'])
     df_grouped = df.groupby(['Category', 'Subcategory']).agg(lambda x: '<br>'.join(list(set(x))))
     with open(outfile, 'w') as html_file:
-        html_file.write(f'''
-<html>
-<head>
-<style> 
-  table, th, td {{font-size:10pt; border:1px solid black; border-collapse:collapse; text-align:left;}}
-  th, td {{padding: 5px; min-width: 160px}}
-</style>
-</head>
-<body>
-{
-    df_grouped.to_html(escape=False)
-}
-</body>
-</html>'''
-)
+        html_file.write(html_header(title = 'CLIVAR 2024. Chapter 5 reference tag table'))
+        html_file.write(df_grouped.to_html(escape=False))
+        html_file.write(html_footer())
 
     subcats = sorted(list(set(list(df[df['Category'] == 'SCEN']['Subcategory']))))
     data2 = []
@@ -117,21 +102,6 @@ for collection in collection_filenames.keys():
     df2 = pd.concat(data2, axis = 1).fillna('')
     df2.columns = subcats
     with open(outfile2, 'w') as html_file:
-        html_file.write(f'''
-<html>
-<head>
-<style> 
-  table, th, td {{font-size:10pt; border:1px solid black; border-collapse:collapse; text-align:left;}}
-  th, td {{padding: 5px; min-width: 160px}}
-</style>
-</head>
-<body>
-<h1>CLIVAR 2024. Chapter 5 reference tag table</h1>
-({current_date})
-{
-  df2.to_html(escape=False)
-}
-</body>
-</html>'''
-)
-
+        html_file.write(html_header(title = 'CLIVAR 2024. Chapter 5 reference tag table by scenario'))
+        html_file.write(df2.to_html(escape=False))
+        html_file.write(html_footer())

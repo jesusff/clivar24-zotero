@@ -2,7 +2,6 @@
 # coding: utf-8
 
 import os
-from datetime import datetime
 from pyzotero import zotero
 from common import *
 
@@ -39,36 +38,6 @@ def extract_tags_and_notes(zot, item, notes_data):
         'Collections' : collections,
         'URL' : url,
         'Notes': notes}
-
-def html_header():
-    current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
-    return(f'''<html>
-<head>
-<style> 
-  table, th, td {{font-size:10pt; border:1px solid black; border-collapse:collapse; text-align:left;}}
-  th, td {{padding: 5px; vertical-align: top;}}
-  h2 {{ padding-top: 20px; padding-bottom: 0px; }}
-  a {{ text-decoration: none; color: #3399ff;}}
-</style>
-</head>
-<body>
-<h1 id="top">CLIVAR 2024. Chapter 5 references</h1>
-({current_date})
-''' )
-
-def html_footer():
-    return(f'''
-</body>
-</html>
-''' )
-
-def plain_chars(string):
-  return(string
-    .replace('/', '-')
-    .replace(' ', '-')
-    .replace('_', '-')
-    .lower()
-  )
 
 def generate_html_table(report_data, collection):
     html_table = f"""
@@ -110,7 +79,7 @@ for collection_name, collection_fname in collection_filenames.items():
     report_data = sorted(report_data, key=lambda x: (x['First Author'].lower(), x['Year']))
     html_table = generate_html_table(report_data, collection_name)
     html_file = open(report_filename, 'w')
-    html_file.write(html_header())
+    html_file.write(html_header(title = 'CLIVAR 2024. Chapter 5 references'))
     html_file.write('<p>'+ ' · '.join([f'<a href=#{plain_chars(collection_name)}-{plain_chars(x["data"]["name"])}>{x["data"]["name"]}</a>' for x in subcollections]))
     html_file.write(html_table)
         
