@@ -101,18 +101,8 @@ collection_keys = {
 
 if __name__ == '__main__':
   fp = open(f'./{html_dir}/index.html', 'w')
-  fp.write(f'''
-<html>
-<head>
-<style> 
-  table, th, td {{font-size:10pt; border:1px solid black; border-collapse:collapse; text-align:left;}}
-  th, td {{padding: 5px;}}
-</style>
-</head>
-<body>
-<h1>CLIVAR 2024. Chapter 5 references</h1>
-<table>
-''')
+  fp.write(html_header(title = 'CLIVAR 2024. Chapter 5 references'))
+  fp.write('<table>')
   for title, fname in collection_filenames.items():
     fp.write(f'''
 <tr>
@@ -123,8 +113,6 @@ if __name__ == '__main__':
 </tr>
 ''')
 
-  fp.write(f'''
-</table>
-</body>
-</html>
-''')
+  fp.write('</table>')
+  fp.write(html_footer())
+  fp.close()
