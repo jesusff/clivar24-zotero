@@ -55,17 +55,17 @@ if os.path.exists(cachefile):
         data = json.load(file)
 else:
     top_collection_key = collection_keys[top_collection_name]
-    target_keys = get_all_subcollection_keys(top_collection_key)
+    target_keys = set(get_all_subcollection_keys(top_collection_key))
+    with open(sys.argv[1], "r") as file:
+        all_items = json.load(file)
     data = {}
-    for key in target_keys:
-        name = collection_map[key]
-        items = zot.collection_items(key)
-        data[name] = []
-        for item in items:
-            # Check if the entry has a parent item (i.e., it's not a note or attachment)
-            if 'parentItem' in item['data']:
-                continue
-            data[name].extend(pertags(item))
+    for item in all_items['items']:
+        if 'parentItem' in item['data']:
+            continue # note or attachment
+        if not set(item['data']['collections']) & target_keys:
+            continue # item not in target collection set
+        name = get_first_author(item)
+        data[name] = pertags(item)
     with open(cachefile, "w") as file:
         json.dump(data, file)
 
@@ -81,17 +81,21 @@ sorted_periods = sorted(set(period_counts.keys()), key=lambda x: (datetime.strpt
                                                                  -(datetime.strptime(x.split('-')[1], '%Y') - datetime.strptime(x.split('-')[0], '%Y'))))
 
 # Preparing the data for plotting
-plot_data = [(parse_period(period), period_counts[period]) for period in sorted_periods]
+def is_valid(per):
+  [y1, y2] = per.split('-')
+  length = int(y2)-int(y1)+1
+  return(10 <= length <= 50)
+
+plot_data = [(period, period_counts[period]) for period in sorted_periods if is_valid(period)]
 
 # Plotting
 fig, ax = plt.subplots()
 max_count = max(period_counts.values())
 yticklabels = []
-for idx, ((start, end), count) in enumerate(plot_data):
-    print(((start, end), count))
+for idx, (period, count) in enumerate(plot_data):
     color_intensity = 1 - (0.2 + 0.8 *count / max_count)
-    ax.plot([start, end], [idx, idx], color=(color_intensity, color_intensity, color_intensity))
-    yticklabels.append(f'{sorted_periods[idx]} ({count})')
+    ax.plot(parse_period(period), [idx, idx], color=(color_intensity, color_intensity, color_intensity))
+    yticklabels.append(f'{period} ({count})')
 
 # Setting the y-axis
 ax.set_yticks(range(len(plot_data)))
