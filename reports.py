@@ -77,11 +77,13 @@ for collection_name, collection_fname in collection_filenames.items():
     notes = get_notes(zot, collection_key)
     report_data = [extract_tags_and_notes(zot, item, notes) for item in top_level_items]
     report_data = sorted(report_data, key=lambda x: (x['First Author'].lower(), x['Year']))
-    html_table = generate_html_table(report_data, collection_name)
     html_file = open(report_filename, 'w')
     html_file.write(html_header(title = 'CLIVAR 2024. Chapter 5 references'))
-    html_file.write('<p>'+ ' · '.join([f'<a href=#{plain_chars(collection_name)}-{plain_chars(x["data"]["name"])}>{x["data"]["name"]}</a>' for x in subcollections]))
-    html_file.write(html_table)
+    html_file.write(
+        '<p><a href="index.html">All reports</a> | ' +
+        ' · '.join([f'<a href=#{plain_chars(collection_name)}-{plain_chars(x["data"]["name"])}>{x["data"]["name"]}</a>' for x in subcollections])
+    )
+    html_file.write(generate_html_table(report_data, collection_name))
         
     for subcollection in subcollections:
         subcollection_key = subcollection['data']['key']

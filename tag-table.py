@@ -9,6 +9,7 @@ from common import *
 zot = zotero.Zotero(group_id, 'group', api_key)
 
 all_collections = zot.everything(zot.collections())
+collection_map = dict([(coll['data']['key'], coll['data']['name']) for coll in all_collections])
 
 subcategory_mapping = {
     'rcp26':  'rcp26/ssp126',
@@ -46,8 +47,6 @@ def get_subcollection_keys(zot, collection_key):
     subcollection_keys = [collection_key]
     subcollections = [collection for collection in all_collections if collection['data']['parentCollection'] == collection_key]
     subcollection_keys.extend([subcollection['key'] for subcollection in subcollections])
-    for subcollection in subcollections:
-        subcollection_keys.extend(get_subcollection_keys(zot, subcollection['key']))
     return subcollection_keys
 
 def taglist(item):
@@ -71,37 +70,52 @@ def taglist(item):
     return(rval)
 
 for collection in collection_filenames.keys():
+    subcollection_keys = get_subcollection_keys(zot, collection_keys[collection])
     outfile = f'./{html_dir}/tag-table-{collection_filenames[collection]}.html'
-    outfile2 = f'./{html_dir}/tag-table-{collection_filenames[collection]}-by-scenario.html'
     if os.path.exists(outfile):
       print(f'Skipping existing {collection} ...')
       continue
     print(f'Processing {collection} ...')
-    items = zot.collection_items(collection_keys[collection])
-    for collection_key in get_subcollection_keys(zot, collection_keys[collection]):
-        items.extend(zot.collection_items(collection_key))
-    data = []
-    for item in items:
-        # Check if the entry has a parent item (i.e., it's not a note or attachment)
-        if 'parentItem' in item['data']:
-            continue
-        data.extend(taglist(item))
-    df = pd.DataFrame(data)
-    df['Subcategory'] = df['Subcategory'].map(subcategory_mapping).fillna(df['Subcategory'])
-    df_grouped = df.groupby(['Category', 'Subcategory']).agg(lambda x: '<br>'.join(list(set(x))))
-    with open(outfile, 'w') as html_file:
-        html_file.write(html_header(title = 'CLIVAR 2024. Chapter 5 reference tag table'))
+    banner = (
+        '<p>' + '<a href="index.html">All reports</a> | ' +
+        ' · '.join([f'<a href=#{plain_chars(collection_map[x])}>{collection_map[x]}</a>' for x in subcollection_keys])
+    )
+    html_file = open(outfile, 'w')
+    html_file.write(html_header(title = 'CLIVAR 2024. Chapter 5 reference tag table'))
+    html_file.write(banner)
+    html_file2 = open(outfile.replace('.html', '-by-scenario.html'), 'w')
+    html_file2.write(html_header(title = 'CLIVAR 2024. Chapter 5 reference tag table by scenario'))
+    html_file2.write(banner)
+    for key in subcollection_keys:
+        items = zot.collection_items(key)
+        name = collection_map[key]
+        data = []
+        for item in items:
+            # Check if the entry has a parent item (i.e., it's not a note or attachment)
+            if 'parentItem' in item['data']:
+                continue
+            data.extend(taglist(item))
+        df = pd.DataFrame(data)
+        html_file.write(f'<h2 id={plain_chars(name)}>{name} <a href="#top">^</a></h2>')
+        if not 'Subcategory' in df:
+            continue # No tags in this (sub) collection
+        df['Subcategory'] = df['Subcategory'].map(subcategory_mapping).fillna(df['Subcategory'])
+        df_grouped = df.groupby(['Category', 'Subcategory']).agg(lambda x: '<br>'.join(list(set(x))))
         html_file.write(df_grouped.to_html(escape=False))
-        html_file.write(html_footer())
 
-    subcats = sorted(list(set(list(df[df['Category'] == 'SCEN']['Subcategory']))))
-    data2 = []
-    for subcat in subcats:
-        subcatkeys = df[df['Subcategory'] == subcat]['Key']
-        data2.append(df[df['Key'].isin(subcatkeys)].groupby(['Category', 'Subcategory']).agg(lambda x: '<br>'.join(sorted(list(set(x))))))
-    df2 = pd.concat(data2, axis = 1).fillna('')
-    df2.columns = subcats
-    with open(outfile2, 'w') as html_file:
-        html_file.write(html_header(title = 'CLIVAR 2024. Chapter 5 reference tag table by scenario'))
-        html_file.write(df2.to_html(escape=False))
-        html_file.write(html_footer())
+        subcats = sorted(list(set(list(df[df['Category'] == 'SCEN']['Subcategory']))))
+        data2 = []
+        for subcat in subcats:
+            subcatkeys = df[df['Subcategory'] == subcat]['Key']
+            data2.append(df[df['Key'].isin(subcatkeys)].groupby(['Category', 'Subcategory']).agg(lambda x: '<br>'.join(sorted(list(set(x))))))
+        html_file2.write(f'<h2 id={plain_chars(name)}>{name} <a href="#top">^</a></h2>')
+        if not data2:
+            continue
+        df2 = pd.concat(data2, axis = 1).fillna('')
+        df2.columns = subcats
+        html_file2.write(df2.to_html(escape=False))
+
+    html_file.write(html_footer())
+    html_file.close()
+    html_file2.write(html_footer())
+    html_file2.close()
