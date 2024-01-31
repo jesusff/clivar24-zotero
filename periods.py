@@ -50,6 +50,11 @@ def parse_period(period):
         year = int(period)
         return datetime(year, 1, 1), datetime(year, 12, 31)
 
+def is_valid(per):
+  [y1, y2] = per.split('-')
+  length = int(y2)-int(y1)+1
+  return(10 <= length <= 50)
+
 if os.path.exists(cachefile):
     with open(cachefile, "r") as file:
         data = json.load(file)
@@ -64,7 +69,9 @@ else:
             continue # note or attachment
         if not set(item['data']['collections']) & target_keys:
             continue # item not in target collection set
-        name = get_first_author(item)
+        name = f'{get_first_author(item)}, {item["data"]["date"][0:4]}' 
+        while name in data:
+            name = name + 'i'
         data[name] = pertags(item)
     with open(cachefile, "w") as file:
         json.dump(data, file)
@@ -73,18 +80,14 @@ else:
 period_counts = Counter()
 for periods in data.values():
     for period in periods:
-        if '-' in period:  # Only consider periods with a dash
+        if '-' in period:  # Only consider periods with a dash (no GWL)
             period_counts[period] += 1
 
 # Sorting the periods by start year and then by length (descending)
-sorted_periods = sorted(set(period_counts.keys()), key=lambda x: (datetime.strptime(x.split('-')[0], '%Y'), 
-                                                                 -(datetime.strptime(x.split('-')[1], '%Y') - datetime.strptime(x.split('-')[0], '%Y'))))
-
-# Preparing the data for plotting
-def is_valid(per):
-  [y1, y2] = per.split('-')
-  length = int(y2)-int(y1)+1
-  return(10 <= length <= 50)
+sorted_periods = sorted(
+    set(period_counts.keys()),
+    key = lambda x: (int(x.split('-')[0]), -int(x.split('-')[1]))
+)
 
 plot_data = [(period, period_counts[period]) for period in sorted_periods if is_valid(period)]
 
@@ -104,7 +107,7 @@ ax.invert_yaxis()  # Invert y-axis to display the earliest period at the top
 
 # Setting the x-axis
 ax.xaxis_date()
-ax.set_xlim([datetime(1940, 1, 1), datetime(2101, 1, 1)])
+ax.set_xlim([datetime(1950, 1, 1), datetime(2102, 1, 1)])
 ax.xaxis.set_major_locator(mdates.YearLocator(10))  # Every 10 years
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
 
