@@ -27,6 +27,9 @@ def html_header(title='CLIVAR 2024. Chapter 5'):
   h2 {{ padding-top: 20px; padding-bottom: 0px; }}
   a {{ text-decoration: none; color: #3399ff;}}
 </style>
+<title>
+  {title}
+</title>
 </head>
 <body>
 <h1 id="top">{title}</h1>
